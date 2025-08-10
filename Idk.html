@@ -1,0 +1,95 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Access Site</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        video {
+            width: 320px;
+            height: 240px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #info {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Grant Camera Access to Proceed</h2>
+        <video id="video" autoplay playsinline></video>
+        <button onclick="startCamera()">Start Camera and Get Info</button>
+        <div id="info"></div>
+    </div>
+
+    <script>
+        async function startCamera() {
+            try {
+                // Request camera access
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('video').srcObject = stream;
+
+                // Fetch IP address
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const ip = ipData.ip;
+
+                // Request geolocation for phone/device location
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    // Reverse geocode to get state using Nominatim API
+                    const geoResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=5&addressdetails=1`);
+                    const geoData = await geoResponse.json();
+                    const state = geoData.address.state || geoData.address.region || 'Unknown';
+
+                    // Display info
+                    document.getElementById('info').innerHTML = `
+                        <p>Your IP Address: ${ip}</p>
+                        <p>Your State (from location): ${state}</p>
+                    `;
+                }, (error) => {
+                    document.getElementById('info').innerHTML = '<p>Geolocation access denied or error: ' + error.message + '</p>';
+                });
+            } catch (error) {
+                document.getElementById('info').innerHTML = '<p>Camera access denied or error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
+```
